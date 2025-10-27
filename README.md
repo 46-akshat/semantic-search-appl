@@ -1,15 +1,14 @@
 # Semantic Search Application
 
-A Spring Boot application that provides semantic search capabilities for API documentation. Users can upload OpenAPI JSON files and perform intelligent keyword-based searches to find relevant API endpoints.
+A Spring Boot application that allows developers to upload their API endpoints and perform semantic searches. Developers can document their endpoints with details like HTTP methods, descriptions, request/response bodies, and search through them efficiently.
 
-## Current Status
+## Features
 
-This project is currently in the initial development phase, implementing a basic CRUD system with the following capabilities:
-
-- **JSON Upload**: Upload OpenAPI specification files in JSON format
-- **Keyword Search**: Search through uploaded API documentation using keywords
-- **Data Persistence**: Store API endpoint information in a PostgreSQL database
-- **RESTful API**: Expose endpoints for file upload and search operations
+- **API Documentation**: Store comprehensive API endpoint information
+- **Semantic Search**: Search through API endpoints using natural language queries
+- **HTTP Method Support**: Support for GET, POST, PUT, DELETE, OPTIONS methods
+- **Request/Response Details**: Store request bodies, parameters, queries, and response information
+- **Data Persistence**: PostgreSQL database for reliable data storage
 
 ## Architecture Overview
 
@@ -47,125 +46,115 @@ The application follows a layered architecture pattern:
 - **Docker** - Containerization
 - **React/Vue** - Frontend framework
 
-## Core Data Models
+## Core Data Model
 
-### ApiEndpoint Entity
-Stores information about API endpoints extracted from OpenAPI specifications:
-- `id` - Unique identifier
-- `path` - API endpoint path (e.g., `/api/users/{id}`)
-- `method` - HTTP method (GET, POST, PUT, DELETE)
-- `summary` - Brief description of the endpoint
-- `description` - Detailed description
-- `operationId` - Unique operation identifier
-- `tags` - Associated tags for categorization
+### ApiDetails Entity
+Stores comprehensive information about API endpoints:
 
-### User Entity (Planned)
-Stores user information for authentication:
-- `id` - Unique identifier
-- `username` - User login name
-- `password` - Hashed password
-- `email` - User email address
-- `createdAt` - Account creation timestamp
+- `id` (UUID) - Unique identifier for each endpoint
+- `method` (ApiMethod) - HTTP method (GET, POST, PUT, DELETE, OPTIONS)
+- `description` (String, max 300 chars) - Brief description of the endpoint
+- `url` (String) - API endpoint path (e.g., "/api/users/profile")
+- `requestBody` (String) - JSON structure of request body
+- `requestParam` (String) - Request parameters information
+- `requestQuery` (String) - Query parameters information
+- `responseBody` (String) - Expected response structure
+- `responseStatusCode` (String) - HTTP status codes returned
+
+### ApiMethod Enum
+Supported HTTP methods:
+```java
+public enum ApiMethod {
+    GET, POST, PUT, DELETE, OPTIONS
+}
+```
 
 ## API Endpoints
 
-### Current Implementation
-
-#### Upload OpenAPI Specification
+### Endpoint Management
 ```http
-POST /api/ingest/upload
-Content-Type: multipart/form-data
+# Create new API endpoint
+POST /api/endpoints
+Content-Type: application/json
 
-Body: file (OpenAPI JSON specification)
+{
+  "method": "GET",
+  "description": "Get user profile information",
+  "url": "/api/users/profile",
+  "requestBody": null,
+  "requestParam": "userId (required)",
+  "requestQuery": "include=details",
+  "responseBody": "{ \"id\": 1, \"name\": \"John\", \"email\": \"john@example.com\" }",
+  "responseStatusCode": "200"
+}
 ```
 
-#### Search API Endpoints
 ```http
-GET /api/search?query={keyword}
+# Get all endpoints
+GET /api/endpoints
 
-Response: List of matching ApiEndpoint objects
+# Get endpoint by ID
+GET /api/endpoints/{id}
+
+# Update endpoint
+PUT /api/endpoints/{id}
+
+# Delete endpoint
+DELETE /api/endpoints/{id}
 ```
 
-### Planned Endpoints
-
-#### Authentication (Day 6)
+### Search Endpoints
 ```http
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-```
+# Search endpoints by description or URL
+GET /api/search?query=user profile
 
-#### Semantic Indexing (Day 3)
-```http
-POST /api/index/rebuild
+# Filter by HTTP method
+GET /api/search?method=GET
+
+# Combined search
+GET /api/search?query=authentication&method=POST
 ```
 
 ## Database Schema
 
-### api_endpoints table
+### api_details table
 ```sql
-CREATE TABLE api_endpoints (
-    id BIGSERIAL PRIMARY KEY,
-    path VARCHAR(500) NOT NULL,
+CREATE TABLE api_details (
+    id UUID PRIMARY KEY,
     method VARCHAR(10) NOT NULL,
-    summary VARCHAR(1000),
-    description TEXT,
-    operation_id VARCHAR(255),
-    tags VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    description VARCHAR(300),
+    url VARCHAR(255),
+    request_body TEXT,
+    request_param TEXT,
+    request_query TEXT,
+    response_body TEXT,
+    response_status_code VARCHAR(50)
 );
 ```
 
-### users table (Planned)
-```sql
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+## Development Phases
 
-## Development Roadmap
-
-### ✅ Day 1: Project Foundation
+### Phase 1: Core CRUD Operations
 - [x] Spring Boot project setup
-- [x] Database configuration
-- [x] Core JPA entities
-- [x] Repository interfaces
+- [x] ApiDetails entity and ApiMethod enum
+- [ ] Repository layer implementation
+- [ ] Service layer for business logic
+- [ ] REST controllers for API endpoints
 
-### 🔄 Day 2: Basic CRUD Operations (Current)
-- [ ] File upload controller
-- [ ] OpenAPI parsing service
-- [ ] Basic search functionality
-- [ ] Database persistence
+### Phase 2: Search Functionality
+- [ ] Basic keyword search implementation
+- [ ] Search by HTTP method filtering
+- [ ] Advanced search with multiple criteria
 
-### 📋 Day 3: Semantic Indexing
-- [ ] ChromaDB integration
-- [ ] Embedding generation with Google Gemini
-- [ ] Vector storage and retrieval
+### Phase 3: Semantic Search Enhancement
+- [ ] Integration with embedding models
+- [ ] Vector database setup
+- [ ] Semantic similarity search
 
-### 📋 Day 4: Advanced Search API
-- [ ] Semantic search implementation
-- [ ] Vector similarity matching
-- [ ] Hybrid search (keyword + semantic)
-
-### 📋 Day 5: Frontend Development
-- [ ] React/Vue application setup
-- [ ] Search interface components
-- [ ] API integration
-
-### 📋 Day 6: Authentication System
-- [ ] User registration and login
-- [ ] JWT token management
-- [ ] Endpoint security
-
-### 📋 Day 7: Production Deployment
-- [ ] Docker containerization
-- [ ] Docker Compose orchestration
-- [ ] Environment configuration
-- [ ] Documentation completion
+### Phase 4: Frontend & Polish
+- [ ] Simple web interface for endpoint management
+- [ ] Search interface with filters
+- [ ] Documentation and deployment
 
 ## Getting Started
 
@@ -201,16 +190,27 @@ CREATE TABLE users (
 
 ### Testing with Sample Data
 
-You can test the upload functionality using a sample OpenAPI specification:
+Create a new API endpoint:
 
 ```bash
-curl -X POST -F "file=@sample-openapi.json" http://localhost:8080/api/ingest/upload
+curl -X POST http://localhost:8080/api/endpoints \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "GET",
+    "description": "Retrieve user profile information",
+    "url": "/api/users/profile",
+    "requestParam": "userId (required)",
+    "requestQuery": "include=details,permissions",
+    "responseBody": "{\"id\": 1, \"name\": \"John Doe\", \"email\": \"john@example.com\"}",
+    "responseStatusCode": "200"
+  }'
 ```
 
-Then search for endpoints:
+Search for endpoints:
 
 ```bash
 curl "http://localhost:8080/api/search?query=user"
+curl "http://localhost:8080/api/search?method=GET"
 ```
 
 ## Project Structure
@@ -219,33 +219,31 @@ curl "http://localhost:8080/api/search?query=user"
 src/
 ├── main/
 │   ├── java/
-│   │   └── com/example/semanticsearch/
-│   │       ├── SemanticSearchApplication.java
+│   │   └── com/example/SemanticSearchAppl/
+│   │       ├── SemanticSearchApplApplication.java
 │   │       ├── controller/
-│   │       │   ├── IngestionController.java
+│   │       │   ├── ApiEndpointController.java
 │   │       │   └── SearchController.java
 │   │       ├── entity/
-│   │       │   ├── ApiEndpoint.java
-│   │       │   └── User.java
+│   │       │   ├── ApiDetails.java
+│   │       │   └── ApiMethod.java
 │   │       ├── repository/
-│   │       │   ├── ApiEndpointRepository.java
-│   │       │   └── UserRepository.java
+│   │       │   └── ApiDetailsRepository.java
 │   │       └── service/
-│   │           ├── IngestionService.java
+│   │           ├── ApiDetailsService.java
 │   │           └── SearchService.java
 │   └── resources/
-│       ├── application.properties
-│       └── data.sql (sample data)
+│       └── application.properties
 └── test/
     └── java/
-        └── com/example/semanticsearch/
-            └── SemanticSearchApplicationTests.java
+        └── com/example/SemanticSearchAppl/
+            └── SemanticSearchApplApplicationTests.java
 ```
 
-## Contributing
+## Example Use Cases
 
-This project follows a structured 7-day development plan. Each day builds upon the previous day's work, gradually evolving from a basic CRUD application to a sophisticated semantic search platform.
+- **API Documentation**: Teams can document all their REST endpoints in one place
+- **Endpoint Discovery**: Developers can search for existing endpoints before creating new ones
+- **API Catalog**: Maintain a searchable catalog of all microservice endpoints
+- **Integration Helper**: Find relevant endpoints when integrating with other services
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
