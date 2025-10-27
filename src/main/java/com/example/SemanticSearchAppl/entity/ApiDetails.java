@@ -45,12 +45,17 @@ public class ApiDetails {
     @Column(columnDefinition = "TEXT")
     private String responseBody;
 
+    @ElementCollection
+    @CollectionTable(name = "api_response_status_codes", joinColumns = @JoinColumn(name = "api_details_id"))
+    @Column(name = "status_code")
     private List<Integer> responseStatusCode;
 
     @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
 }
