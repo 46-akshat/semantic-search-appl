@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            background: #f8f9fa;
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            background: #f8f9fa;
+        }
+
+        .content {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .api-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .api-card {
+            background: #f8f9fa;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .api-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .api-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .method-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .method-get {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .method-post {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .method-put {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .method-delete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .method-options {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .deprecated {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .deprecated-badge {
+            background: #dc3545;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+
+        .api-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 API Documentation Manager</h1>
+            <p>Manage and document your API endpoints with ease</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('list')">📋 View APIs</button>
+            <button class="tab" onclick="showTab('create')">➕ Add New API</button>
+        </div>
+
+        <div id="list-content" class="content">
+            <div id="loading" class="loading">Loading APIs...</div>
+            <div id="api-list" class="api-list hidden"></div>
+        </div>
+
+        <div id="create-content" class="content hidden">
+            <h2>Add New API Endpoint</h2>
+            <form id="api-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="method">HTTP Method</label>
+                        <select id="method" required>
+                            <option value="">Select Method</option>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="OPTIONS">OPTIONS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="authType">Authentication</label>
+                        <select id="authType">
+                            <option value="NONE">None</option>
+                            <option value="BEARER_TOKEN">Bearer Token</option>
+                            <option value="API_KEY">API Key</option>
+                            <option value="BASIC_AUTH">Basic Auth</option>
+                            <option value="OAUTH2">OAuth2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="path">API Path</label>
+                    <input type="text" id="path" placeholder="/api/v1/users/{id}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" placeholder="Brief description of what this endpoint does"
+                        required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="requestParam">Request Parameters</label>
+                        <textarea id="requestParam" placeholder="id (required) - User identifier"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestQuery">Query Parameters</label>
+                        <textarea id="requestQuery" placeholder="include=details&format=json"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestBody">Request Body (JSON)</label>
+                    <textarea id="requestBody" placeholder='{"name": "John", "email": "john@example.com"}'></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="responseBody">Response Body (JSON)</label>
+                    <textarea id="responseBody"
+                        placeholder='{"id": 1, "name": "John", "email": "john@example.com"}'></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="responseStatusCode">Status Codes (comma-separated)</label>
+                        <input type="text" id="responseStatusCode" placeholder="200, 400, 404" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="isDeprecated">
+                            <input type="checkbox" id="isDeprecated" style="width: auto; margin-right: 0.5rem;">
+                            Mark as Deprecated
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">💾 Save API Endpoint</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
