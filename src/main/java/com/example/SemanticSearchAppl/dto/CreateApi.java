@@ -3,12 +3,14 @@ package com.example.SemanticSearchAppl.dto;
 import com.example.SemanticSearchAppl.entity.ApiMethod;
 import com.example.SemanticSearchAppl.entity.AuthType;
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-
-@Getter@Setter
+@Data
+@Getter
+@Setter
 public class CreateApi {
 
     private ApiMethod method;

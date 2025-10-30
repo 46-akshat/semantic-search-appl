@@ -1,287 +1,383 @@
-// API Base URL
-const API_BASE = '/api/v1/details';
+// Global variables
+let manualApiList = [];
+let allSavedApis = [];
 
-// Global state
-let currentEditId = null;
+// ========== TAB SWITCHING ==========
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+    
+    // Load APIs when switching to view tab
+    if (tabName === 'view') {
+        loadAllApis();
+    }
+}
 
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function () {
-    loadAPIs();
-    setupEventListeners();
+// ========== FILE UPLOAD FUNCTIONALITY ==========
+
+// Setup drag and drop
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    // Handle dropped files
+    uploadArea.addEventListener('drop', handleDrop, false);
 });
 
-// Setup event listeners
-function setupEventListeners() {
-    document.getElementById('api-form').addEventListener('submit', handleFormSubmit);
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
 }
 
-// Tab switching
-function showTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    event.target.classList.add('active');
+function highlight(e) {
+    document.getElementById('uploadArea').classList.add('dragover');
+}
 
-    // Show/hide content
-    document.getElementById('list-content').classList.toggle('hidden', tabName !== 'list');
-    document.getElementById('create-content').classList.toggle('hidden', tabName !== 'create');
+function unhighlight(e) {
+    document.getElementById('uploadArea').classList.remove('dragover');
+}
 
-    // Reload APIs when switching to list tab
-    if (tabName === 'list') {
-        loadAPIs();
-    }
-
-    // Reset form when switching to create tab
-    if (tabName === 'create') {
-        resetForm();
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    if (files.length > 0) {
+        handleFileUpload(files[0]);
     }
 }
 
-// Load all APIs
-async function loadAPIs() {
-    const loading = document.getElementById('loading');
-    const apiList = document.getElementById('api-list');
-
-    loading.classList.remove('hidden');
-    apiList.classList.add('hidden');
-
-    try {
-        const response = await fetch(API_BASE);
-        if (!response.ok) throw new Error('Failed to load APIs');
-
-        const apis = await response.json();
-        displayAPIs(apis);
-    } catch (error) {
-        showError('Failed to load APIs: ' + error.message);
-    } finally {
-        loading.classList.add('hidden');
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        handleFileUpload(file);
     }
 }
 
-// Display APIs in the list
-function displayAPIs(apis) {
-    const apiList = document.getElementById('api-list');
-
-    if (apis.length === 0) {
-        apiList.innerHTML = '<div class="loading">No APIs found. Create your first API endpoint!</div>';
-    } else {
-        apiList.innerHTML = apis.map(api => createAPICard(api)).join('');
+function handleFileUpload(file) {
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith('.json')) {
+        showStatus('❌ Please select a JSON file (.json extension required)', 'error');
+        return;
     }
-
-    apiList.classList.remove('hidden');
+    
+    // Show loading message
+    showStatus('📤 Uploading file: ' + file.name + '...', 'info');
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Upload file
+    fetch('/api/v1/ingest/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        if (data.includes('Success')) {
+            showStatus(data, 'success');
+            // Clear file input
+            document.getElementById('fileInput').value = '';
+        } else {
+            showStatus(data, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showStatus('❌ Upload failed: ' + error.message, 'error');
+    });
 }
 
-// Create API card HTML
-function createAPICard(api) {
-    const methodClass = `method-${api.method.toLowerCase()}`;
-    const deprecatedClass = api.isDeprecated ? 'deprecated' : '';
-    const deprecatedBadge = api.isDeprecated ? '<span class="deprecated-badge">DEPRECATED</span>' : '';
+// ========== MANUAL API CREATION ==========
 
-    return `
-        <div class="api-card ${deprecatedClass}">
-            <div class="api-header">
-                <div>
-                    <span class="method-badge ${methodClass}">${api.method}</span>
-                    <strong style="margin-left: 1rem;">${api.path}</strong>
-                    ${deprecatedBadge}
+function addApiToList() {
+    // Get form values
+    const path = document.getElementById('apiPath').value.trim();
+    const method = document.getElementById('apiMethod').value;
+    const description = document.getElementById('apiDescription').value.trim();
+    const requestBody = document.getElementById('requestBody').value.trim();
+    const responseBody = document.getElementById('responseBody').value.trim();
+    const requestParams = document.getElementById('requestParams').value.trim();
+    const requestQuery = document.getElementById('requestQuery').value.trim();
+    
+    // Validate required fields
+    if (!path || !method || !description) {
+        showStatus('❌ Please fill in all required fields (Path, Method, Description)', 'error');
+        return;
+    }
+    
+    // Validate path format
+    if (!path.startsWith('/')) {
+        showStatus('❌ API path should start with "/" (e.g., /api/users)', 'error');
+        return;
+    }
+    
+    // Create API object
+    const apiObj = {
+        path: path,
+        method: method,
+        description: description,
+        requestBody: requestBody || null,
+        responseBody: responseBody || null,
+        requestParam: requestParams || null,
+        requestQuery: requestQuery || null,
+        deprecated: false
+    };
+    
+    // Add to list
+    manualApiList.push(apiObj);
+    
+    // Update UI
+    updateApiListDisplay();
+    clearForm();
+    showStatus('✅ API added to list! Total: ' + manualApiList.length, 'success');
+}
+
+function updateApiListDisplay() {
+    const container = document.getElementById('apiListContainer');
+    const saveButton = document.getElementById('saveAllButton');
+    
+    if (manualApiList.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-style: italic;">No APIs added yet. Use the form above to add some!</p>';
+        saveButton.style.display = 'none';
+        return;
+    }
+    
+    let html = '';
+    manualApiList.forEach((api, index) => {
+        html += `
+            <div class="api-item">
+                <div class="api-header">
+                    <div>
+                        <span class="method-badge method-${api.method.toLowerCase()}">${api.method}</span>
+                        <strong style="margin-left: 10px;">${api.path}</strong>
+                    </div>
+                    <button class="delete-button" onclick="removeApiFromList(${index})">
+                        🗑️ Remove
+                    </button>
                 </div>
+                <p style="margin: 10px 0; color: #666;">${api.description}</p>
+                ${api.requestBody ? `<p><strong>Request:</strong> ${api.requestBody.substring(0, 100)}${api.requestBody.length > 100 ? '...' : ''}</p>` : ''}
+                ${api.responseBody ? `<p><strong>Response:</strong> ${api.responseBody.substring(0, 100)}${api.responseBody.length > 100 ? '...' : ''}</p>` : ''}
             </div>
-            
-            <p style="margin-bottom: 1rem; color: #6c757d;">${api.description}</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <strong>Auth:</strong> ${api.authType || 'None'}
-                </div>
-                <div>
-                    <strong>Status Codes:</strong> ${api.responseStatusCode ? api.responseStatusCode.join(', ') : 'N/A'}
-                </div>
-            </div>
-            
-            ${api.requestParam ? `<div style="margin-bottom: 0.5rem;"><strong>Parameters:</strong> ${api.requestParam}</div>` : ''}
-            ${api.requestQuery ? `<div style="margin-bottom: 0.5rem;"><strong>Query:</strong> ${api.requestQuery}</div>` : ''}
-            
-            <div class="api-actions">
-                <button class="btn btn-small" onclick="editAPI('${api.id}')">✏️ Edit</button>
-                <button class="btn btn-danger btn-small" onclick="deleteAPI('${api.id}')">🗑️ Delete</button>
-                <button class="btn btn-small" onclick="viewDetails('${api.id}')">👁️ View Details</button>
-            </div>
-        </div>
-    `;
+        `;
+    });
+    
+    container.innerHTML = html;
+    saveButton.style.display = 'block';
 }
 
-// Handle form submission
-async function handleFormSubmit(event) {
-    event.preventDefault();
+function removeApiFromList(index) {
+    manualApiList.splice(index, 1);
+    updateApiListDisplay();
+    showStatus('🗑️ API removed from list', 'info');
+}
 
-    const formData = getFormData();
-    const url = currentEditId ? `${API_BASE}/${currentEditId}` : API_BASE;
-    const method = currentEditId ? 'PUT' : 'POST';
+function clearForm() {
+    document.getElementById('apiPath').value = '';
+    document.getElementById('apiMethod').value = 'GET';
+    document.getElementById('apiDescription').value = '';
+    document.getElementById('requestBody').value = '';
+    document.getElementById('responseBody').value = '';
+    document.getElementById('requestParams').value = '';
+    document.getElementById('requestQuery').value = '';
+}
 
-    try {
-        const response = await fetch(url, {
-            method: method,
+function saveAllApis() {
+    if (manualApiList.length === 0) {
+        showStatus('❌ No APIs to save. Add some APIs first!', 'error');
+        return;
+    }
+    
+    showStatus('💾 Saving ' + manualApiList.length + ' APIs to database...', 'info');
+    
+    // Send each API to the server
+    const promises = manualApiList.map(api => {
+        return fetch('/api/v1/details', {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(api)
         });
-
-        if (!response.ok) throw new Error('Failed to save API');
-
-        showSuccess(currentEditId ? 'API updated successfully!' : 'API created successfully!');
-        resetForm();
-        showTab('list');
-
-    } catch (error) {
-        showError('Failed to save API: ' + error.message);
-    }
-}
-
-// Get form data
-function getFormData() {
-    const statusCodes = document.getElementById('responseStatusCode').value
-        .split(',')
-        .map(code => parseInt(code.trim()))
-        .filter(code => !isNaN(code));
-
-    return {
-        method: document.getElementById('method').value,
-        description: document.getElementById('description').value,
-        isDeprecated: document.getElementById('isDeprecated').checked,
-        path: document.getElementById('path').value,
-        authType: document.getElementById('authType').value,
-        requestBody: document.getElementById('requestBody').value || null,
-        requestParam: document.getElementById('requestParam').value || null,
-        requestQuery: document.getElementById('requestQuery').value || null,
-        responseBody: document.getElementById('responseBody').value || null,
-        responseStatusCode: statusCodes
-    };
-}
-
-// Edit API
-async function editAPI(id) {
-    try {
-        const response = await fetch(`${API_BASE}/${id}`);
-        if (!response.ok) throw new Error('Failed to load API details');
-
-        const api = await response.json();
-        populateForm(api);
-        currentEditId = id;
-        showTab('create');
-
-    } catch (error) {
-        showError('Failed to load API for editing: ' + error.message);
-    }
-}
-
-// Populate form with API data
-function populateForm(api) {
-    document.getElementById('method').value = api.method;
-    document.getElementById('description').value = api.description;
-    document.getElementById('isDeprecated').checked = api.isDeprecated;
-    document.getElementById('path').value = api.path;
-    document.getElementById('authType').value = api.authType || 'NONE';
-    document.getElementById('requestBody').value = api.requestBody || '';
-    document.getElementById('requestParam').value = api.requestParam || '';
-    document.getElementById('requestQuery').value = api.requestQuery || '';
-    document.getElementById('responseBody').value = api.responseBody || '';
-    document.getElementById('responseStatusCode').value = api.responseStatusCode ? api.responseStatusCode.join(', ') : '';
-}
-
-// Delete API
-async function deleteAPI(id) {
-    if (!confirm('Are you sure you want to delete this API endpoint?')) return;
-
-    try {
-        const response = await fetch(`${API_BASE}/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Failed to delete API');
-
-        showSuccess('API deleted successfully!');
-        loadAPIs();
-
-    } catch (error) {
-        showError('Failed to delete API: ' + error.message);
-    }
-}
-
-// View API details in a modal-like format
-function viewDetails(id) {
-    fetch(`${API_BASE}/${id}`)
-        .then(response => response.json())
-        .then(api => {
-            const details = `
-                📋 API Details
-                
-                Method: ${api.method}
-                Path: ${api.path}
-                Description: ${api.description}
-                Auth Type: ${api.authType || 'None'}
-                Deprecated: ${api.isDeprecated ? 'Yes' : 'No'}
-                
-                Request Parameters: ${api.requestParam || 'None'}
-                Query Parameters: ${api.requestQuery || 'None'}
-                
-                Request Body:
-                ${api.requestBody || 'None'}
-                
-                Response Body:
-                ${api.responseBody || 'None'}
-                
-                Status Codes: ${api.responseStatusCode ? api.responseStatusCode.join(', ') : 'None'}
-                
-                Created: ${new Date(api.createdAt).toLocaleString()}
-                Updated: ${new Date(api.updatedAt).toLocaleString()}
-            `;
-
-            alert(details);
+    });
+    
+    Promise.all(promises)
+        .then(responses => {
+            // Check if all requests were successful
+            const allSuccessful = responses.every(response => response.ok);
+            
+            if (allSuccessful) {
+                showStatus('✅ Successfully saved ' + manualApiList.length + ' APIs to database!', 'success');
+                manualApiList = []; // Clear the list
+                updateApiListDisplay();
+            } else {
+                showStatus('⚠️ Some APIs failed to save. Please check the console for details.', 'error');
+            }
         })
-        .catch(error => showError('Failed to load API details: ' + error.message));
+        .catch(error => {
+            console.error('Save error:', error);
+            showStatus('❌ Failed to save APIs: ' + error.message, 'error');
+        });
 }
 
-// Reset form
-function resetForm() {
-    document.getElementById('api-form').reset();
-    currentEditId = null;
+// ========== VIEW SAVED APIS ==========
 
-    // Update form title
-    const title = document.querySelector('#create-content h2');
-    title.textContent = 'Add New API Endpoint';
+function loadAllApis() {
+    showStatus('🔄 Loading saved APIs...', 'info');
+    
+    fetch('/api/v1/details')
+        .then(response => response.json())
+        .then(data => {
+            allSavedApis = data;
+            displaySavedApis(data);
+            showStatus('✅ Loaded ' + data.length + ' APIs from database', 'success');
+        })
+        .catch(error => {
+            console.error('Load error:', error);
+            showStatus('❌ Failed to load APIs: ' + error.message, 'error');
+        });
 }
 
-// Show error message
-function showError(message) {
-    removeMessages();
-    const error = document.createElement('div');
-    error.className = 'error';
-    error.textContent = message;
-    document.querySelector('.content').prepend(error);
-
-    setTimeout(() => error.remove(), 5000);
-}
-
-// Show success message
-function showSuccess(message) {
-    removeMessages();
-    const success = document.createElement('div');
-    success.className = 'success';
-    success.textContent = message;
-    document.querySelector('.content').prepend(success);
-
-    setTimeout(() => success.remove(), 3000);
-}
-
-// Remove existing messages
-function removeMessages() {
-    document.querySelectorAll('.error, .success').forEach(msg => msg.remove());
-}
-
-// Add click handler for tabs (since we can't use inline onclick in some environments)
-document.addEventListener('click', function (event) {
-    if (event.target.classList.contains('tab')) {
-        const tabName = event.target.textContent.includes('View') ? 'list' : 'create';
-        showTab(tabName);
+function displaySavedApis(apis) {
+    const container = document.getElementById('savedApisList');
+    
+    if (apis.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-style: italic;">No APIs found in database. Upload some files or create APIs manually!</p>';
+        return;
     }
+    
+    let html = '';
+    apis.forEach(api => {
+        html += `
+            <div class="api-item">
+                <div class="api-header">
+                    <div>
+                        <span class="method-badge method-${api.method.toLowerCase()}">${api.method}</span>
+                        <strong style="margin-left: 10px;">${api.path}</strong>
+                        ${api.isDeprecated ? '<span style="color: #dc3545; margin-left: 10px;">⚠️ DEPRECATED</span>' : ''}
+                    </div>
+                    <div>
+                        <button class="delete-button" onclick="deleteApi('${api.id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+                <p style="margin: 10px 0; color: #666;">${api.description || 'No description available'}</p>
+                ${api.requestBody ? `<p><strong>Request:</strong> <code>${api.requestBody.substring(0, 150)}${api.requestBody.length > 150 ? '...' : ''}</code></p>` : ''}
+                ${api.responseBody ? `<p><strong>Response:</strong> <code>${api.responseBody.substring(0, 150)}${api.responseBody.length > 150 ? '...' : ''}</code></p>` : ''}
+                ${api.requestParam ? `<p><strong>Parameters:</strong> ${api.requestParam}</p>` : ''}
+                ${api.requestQuery ? `<p><strong>Query:</strong> ${api.requestQuery}</p>` : ''}
+                <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
+                    Created: ${new Date(api.createdAt).toLocaleString()}
+                </p>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function searchApis() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    if (searchTerm === '') {
+        displaySavedApis(allSavedApis);
+        return;
+    }
+    
+    const filteredApis = allSavedApis.filter(api => {
+        return api.path.toLowerCase().includes(searchTerm) ||
+               api.method.toLowerCase().includes(searchTerm) ||
+               (api.description && api.description.toLowerCase().includes(searchTerm));
+    });
+    
+    displaySavedApis(filteredApis);
+    
+    if (filteredApis.length === 0) {
+        document.getElementById('savedApisList').innerHTML = 
+            '<p style="color: #666; font-style: italic;">No APIs match your search term: "' + searchTerm + '"</p>';
+    }
+}
+
+function deleteApi(apiId) {
+    if (!confirm('Are you sure you want to delete this API?')) {
+        return;
+    }
+    
+    showStatus('🗑️ Deleting API...', 'info');
+    
+    fetch('/api/v1/details/' + apiId, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (response.ok) {
+            showStatus('✅ API deleted successfully', 'success');
+            loadAllApis(); // Refresh the list
+        } else {
+            showStatus('❌ Failed to delete API', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        showStatus('❌ Failed to delete API: ' + error.message, 'error');
+    });
+}
+
+// ========== UTILITY FUNCTIONS ==========
+
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('statusMessage');
+    statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+    
+    // Auto-hide success and info messages after 5 seconds
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            statusDiv.innerHTML = '';
+        }, 5000);
+    }
+}
+
+// ========== KEYBOARD SHORTCUTS ==========
+document.addEventListener('keydown', function(event) {
+    // Ctrl/Cmd + Enter to add API (when in manual tab)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.id === 'manual-tab') {
+            addApiToList();
+        }
+    }
+});
+
+// ========== INITIALIZATION ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 API Manager loaded successfully!');
+    showStatus('👋 Welcome! Choose an option above to get started.', 'info');
 });

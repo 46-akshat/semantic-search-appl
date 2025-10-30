@@ -1,0 +1,66 @@
+[
+  {
+    "path": "/api/auth/login",
+    "method": "POST",
+    "description": "User login endpoint - authenticate with email and password",
+    "requestBody": "{\"email\": \"string\", \"password\": \"string\"}",
+    "responseBody": "{\"token\": \"string\", \"user\": {...}}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/auth/register",
+    "method": "POST", 
+    "description": "User registration endpoint - create new account",
+    "requestBody": "{\"name\": \"string\", \"email\": \"string\", \"password\": \"string\"}",
+    "responseBody": "{\"message\": \"User created successfully\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/profile",
+    "method": "GET",
+    "description": "Get current user profile information",
+    "requestParam": "Authorization header required",
+    "responseBody": "{\"id\": \"number\", \"name\": \"string\", \"email\": \"string\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/profile",
+    "method": "PUT",
+    "description": "Update user profile information",
+    "requestBody": "{\"name\": \"string\", \"email\": \"string\"}",
+    "responseBody": "{\"message\": \"Profile updated successfully\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/orders",
+    "method": "GET",
+    "description": "Get all orders for the authenticated user",
+    "requestQuery": "status, limit, offset",
+    "responseBody": "{\"orders\": [...], \"total\": \"number\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/orders",
+    "method": "POST",
+    "description": "Create a new order",
+    "requestBody": "{\"items\": [...], \"shipping_address\": {...}}",
+    "responseBody": "{\"order_id\": \"string\", \"status\": \"pending\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/orders/{id}",
+    "method": "GET",
+    "description": "Get specific order details by order ID",
+    "requestParam": "id (path parameter)",
+    "responseBody": "{\"id\": \"string\", \"items\": [...], \"status\": \"string\"}",
+    "deprecated": false
+  },
+  {
+    "path": "/api/search",
+    "method": "GET",
+    "description": "Search for products or content",
+    "requestQuery": "q (search query), category, price_min, price_max",
+    "responseBody": "{\"results\": [...], \"total_count\": \"number\"}",
+    "deprecated": false
+  }
+]

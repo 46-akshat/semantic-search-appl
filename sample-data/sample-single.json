@@ -1,0 +1,9 @@
+{
+  "path": "/api/weather",
+  "method": "GET",
+  "description": "Get current weather information for a specific location",
+  "requestQuery": "city, country, units",
+  "requestParam": "API key required in header",
+  "responseBody": "{\"temperature\": \"number\", \"humidity\": \"number\", \"description\": \"string\", \"city\": \"string\"}",
+  "deprecated": false
+}

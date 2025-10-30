@@ -1,0 +1,136 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get all users",
+        "description": "Retrieve a list of all users in the system",
+        "responses": {
+          "200": {
+            "description": "List of users"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create user",
+        "description": "Create a new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "email": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Get user by ID",
+        "description": "Retrieve a specific user by their ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user",
+        "description": "Update an existing user's information",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "email": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user",
+        "description": "Remove a user from the system",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "Get all products",
+        "description": "Retrieve a list of all products",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of products"
+          }
+        }
+      }
+    }
+  }
+}

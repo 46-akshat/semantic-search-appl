@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation Manager</title>
+    <title>API Manager - Upload or Create APIs</title>
     <style>
         * {
             margin: 0;
@@ -14,341 +13,445 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-            color: #2c3e50;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
+            padding: 30px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
         .header p {
-            font-size: 1.1rem;
+            font-size: 1.2em;
             opacity: 0.9;
         }
 
-        .tabs {
-            display: flex;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            overflow: hidden;
+        .main-content {
+            padding: 40px;
         }
 
-        .tab {
+        .option-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab-button {
             flex: 1;
-            padding: 1rem;
-            background: white;
+            padding: 15px 20px;
+            background: none;
             border: none;
+            font-size: 1.1em;
             cursor: pointer;
-            font-size: 1rem;
             transition: all 0.3s ease;
             border-bottom: 3px solid transparent;
         }
 
-        .tab.active {
-            background: #f8f9fa;
-            border-bottom-color: #667eea;
-            color: #667eea;
-            font-weight: 600;
+        .tab-button.active {
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+            font-weight: bold;
         }
 
-        .tab:hover {
+        .tab-button:hover {
             background: #f8f9fa;
         }
 
-        .content {
-            background: white;
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload Section Styles */
+        .upload-area {
+            border: 3px dashed #4facfe;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8f0ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #4facfe;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Manual Creation Styles */
+        .api-form {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
         .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
-        label {
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #34495e;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
         }
 
-        input,
-        select,
-        textarea {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e1e8ed;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 1em;
             transition: border-color 0.3s ease;
         }
 
-        input:focus,
-        select:focus,
-        textarea:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4facfe;
         }
 
-        textarea {
+        .form-group textarea {
             resize: vertical;
             min-height: 100px;
         }
 
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .add-api-button {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 8px;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1em;
             cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
+            margin-right: 10px;
             transition: transform 0.2s ease;
         }
 
-        .btn:hover {
+        .add-api-button:hover {
             transform: translateY(-2px);
         }
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        .save-all-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s ease;
         }
 
+        .save-all-button:hover {
+            transform: translateY(-2px);
+        }
+
+        /* API List Styles */
         .api-list {
-            display: grid;
-            gap: 1rem;
+            margin-top: 30px;
         }
 
-        .api-card {
-            background: #f8f9fa;
-            border: 2px solid #e1e8ed;
+        .api-item {
+            background: white;
+            border: 2px solid #e0e0e0;
             border-radius: 10px;
-            padding: 1.5rem;
+            padding: 20px;
+            margin-bottom: 15px;
             transition: all 0.3s ease;
         }
 
-        .api-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
+        .api-item:hover {
+            border-color: #4facfe;
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.1);
         }
 
         .api-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 10px;
         }
 
         .method-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white;
         }
 
-        .method-get {
-            background: #d4edda;
-            color: #155724;
-        }
+        .method-get { background: #28a745; }
+        .method-post { background: #007bff; }
+        .method-put { background: #ffc107; color: #333; }
+        .method-delete { background: #dc3545; }
 
-        .method-post {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .method-put {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .method-delete {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .method-options {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .deprecated {
-            background: #f8d7da;
-            border-color: #f5c6cb;
-        }
-
-        .deprecated-badge {
+        .delete-button {
             background: #dc3545;
             color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            margin-left: 0.5rem;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
         }
 
-        .api-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
+        .delete-button:hover {
+            background: #c82333;
         }
 
-        .btn-small {
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6c757d;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 1rem;
+        /* Status Messages */
+        .status-message {
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 1rem;
+            margin: 20px 0;
+            font-weight: bold;
         }
 
-        .success {
+        .status-success {
             background: #d4edda;
             color: #155724;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <h1>🚀 API Documentation Manager</h1>
-            <p>Manage and document your API endpoints with ease</p>
+            <h1>🚀 API Manager</h1>
+            <p>Upload OpenAPI files or create APIs manually - Your choice!</p>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('list')">📋 View APIs</button>
-            <button class="tab" onclick="showTab('create')">➕ Add New API</button>
-        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tab Navigation -->
+            <div class="option-tabs">
+                <button class="tab-button active" onclick="switchTab('upload')">
+                    📁 Upload JSON File
+                </button>
+                <button class="tab-button" onclick="switchTab('manual')">
+                    ✏️ Create Manually
+                </button>
+                <button class="tab-button" onclick="switchTab('view')">
+                    👀 View APIs
+                </button>
+            </div>
 
-        <div id="list-content" class="content">
-            <div id="loading" class="loading">Loading APIs...</div>
-            <div id="api-list" class="api-list hidden"></div>
-        </div>
+            <!-- Status Messages -->
+            <div id="statusMessage"></div>
 
-        <div id="create-content" class="content hidden">
-            <h2>Add New API Endpoint</h2>
-            <form id="api-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="method">HTTP Method</label>
-                        <select id="method" required>
-                            <option value="">Select Method</option>
-                            <option value="GET">GET</option>
-                            <option value="POST">POST</option>
-                            <option value="PUT">PUT</option>
-                            <option value="DELETE">DELETE</option>
-                            <option value="OPTIONS">OPTIONS</option>
-                        </select>
+            <!-- Upload Tab -->
+            <div id="upload-tab" class="tab-content active">
+                <h2>📤 Upload OpenAPI JSON File</h2>
+                <p style="margin-bottom: 20px; color: #666;">
+                    Have an OpenAPI specification? Just drag and drop it here or click to browse!
+                </p>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <h3>Drag & Drop your JSON file here</h3>
+                    <p>or</p>
+                    <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                    <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileSelect(event)">
+                    <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                        Supported formats: OpenAPI 3.0, Simple JSON arrays, Single API objects
+                    </p>
+                </div>
+            </div>
+
+            <!-- Manual Creation Tab -->
+            <div id="manual-tab" class="tab-content">
+                <h2>✏️ Create API Manually</h2>
+                <p style="margin-bottom: 20px; color: #666;">
+                    Don't have a JSON file? No problem! Create your APIs one by one using this form.
+                </p>
+
+                <div class="api-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apiPath">API Path *</label>
+                            <input type="text" id="apiPath" placeholder="/api/users" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="apiMethod">HTTP Method *</label>
+                            <select id="apiMethod" required>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="OPTIONS">OPTIONS</option>
+                                <option value="HEAD">HEAD</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="authType">Authentication</label>
-                        <select id="authType">
-                            <option value="NONE">None</option>
-                            <option value="BEARER_TOKEN">Bearer Token</option>
-                            <option value="API_KEY">API Key</option>
-                            <option value="BASIC_AUTH">Basic Auth</option>
-                            <option value="OAUTH2">OAuth2</option>
-                        </select>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apiDescription">Description *</label>
+                            <textarea id="apiDescription" placeholder="Describe what this API does..." required></textarea>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="path">API Path</label>
-                    <input type="text" id="path" placeholder="/api/v1/users/{id}" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description" placeholder="Brief description of what this endpoint does"
-                        required></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="requestParam">Request Parameters</label>
-                        <textarea id="requestParam" placeholder="id (required) - User identifier"></textarea>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestBody">Request Body (JSON)</label>
+                            <textarea id="requestBody" placeholder='{"name": "string", "email": "string"}'></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="responseBody">Response Body (JSON)</label>
+                            <textarea id="responseBody" placeholder='{"id": "number", "message": "string"}'></textarea>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="requestQuery">Query Parameters</label>
-                        <textarea id="requestQuery" placeholder="include=details&format=json"></textarea>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestParams">Request Parameters</label>
+                            <input type="text" id="requestParams" placeholder="id, userId, etc.">
+                        </div>
+                        <div class="form-group">
+                            <label for="requestQuery">Query Parameters</label>
+                            <input type="text" id="requestQuery" placeholder="limit, offset, search, etc.">
+                        </div>
                     </div>
+
+                    <button class="add-api-button" onclick="addApiToList()">
+                        ➕ Add to List
+                    </button>
+                    <button class="add-api-button" onclick="clearForm()">
+                        🗑️ Clear Form
+                    </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="requestBody">Request Body (JSON)</label>
-                    <textarea id="requestBody" placeholder='{"name": "John", "email": "john@example.com"}'></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="responseBody">Response Body (JSON)</label>
-                    <textarea id="responseBody"
-                        placeholder='{"id": 1, "name": "John", "email": "john@example.com"}'></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="responseStatusCode">Status Codes (comma-separated)</label>
-                        <input type="text" id="responseStatusCode" placeholder="200, 400, 404" required>
+                <!-- API List -->
+                <div class="api-list">
+                    <h3>📋 APIs to Save</h3>
+                    <div id="apiListContainer">
+                        <p style="color: #666; font-style: italic;">No APIs added yet. Use the form above to add some!</p>
                     </div>
-                    <div class="form-group">
-                        <label for="isDeprecated">
-                            <input type="checkbox" id="isDeprecated" style="width: auto; margin-right: 0.5rem;">
-                            Mark as Deprecated
-                        </label>
-                    </div>
+                    <button class="save-all-button" onclick="saveAllApis()" id="saveAllButton" style="display: none;">
+                        💾 Save All APIs to Database
+                    </button>
                 </div>
+            </div>
 
-                <button type="submit" class="btn">💾 Save API Endpoint</button>
-            </form>
+            <!-- View APIs Tab -->
+            <div id="view-tab" class="tab-content">
+                <h2>👀 View Saved APIs</h2>
+                <p style="margin-bottom: 20px; color: #666;">
+                    Here are all the APIs currently saved in your database.
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="upload-button" onclick="loadAllApis()">
+                        🔄 Refresh List
+                    </button>
+                    <input type="text" id="searchInput" placeholder="🔍 Search APIs..." 
+                           style="margin-left: 10px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; width: 300px;"
+                           onkeyup="searchApis()">
+                </div>
+                
+                <div id="savedApisList">
+                    <p style="color: #666; font-style: italic;">Click "Refresh List" to load your saved APIs.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="app.js"></script>
 </body>
-
 </html>
