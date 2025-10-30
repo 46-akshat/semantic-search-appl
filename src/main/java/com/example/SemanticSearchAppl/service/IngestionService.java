@@ -14,11 +14,15 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * Implementation of IngestionDetails interface
+ * 
  * This service handles uploading and processing JSON files
  * It converts JSON data into our ApiDetails entities and saves them to database
+ * 
+ * Implements IngestionDetails interface to follow good software engineering practices
  */
 @Service
-public class IngestionService {
+public class IngestionService implements IngestionDetails {
     
     // Repository to save data to database
     private final ApiDetailsRepository apiDetailsRepository;
@@ -34,10 +38,13 @@ public class IngestionService {
     
     /**
      * Main method to process uploaded JSON files
+     * Implementation of IngestionDetails interface method
+     * 
      * @param file - The uploaded JSON file
      * @return List of saved ApiDetails
      * @throws Exception if file processing fails
      */
+    @Override
     public List<ApiDetails> processJsonFile(MultipartFile file) throws Exception {
         
         // Step 1: Read the file content as a string
@@ -240,5 +247,97 @@ public class IngestionService {
             System.out.println("⚠️ Unknown HTTP method: " + method + ", defaulting to GET");
             return ApiMethod.GET;
         }
+    }
+    
+    // ========== INTERFACE IMPLEMENTATION METHODS ==========
+    
+    /**
+     * Validates if the uploaded file is acceptable for processing
+     * Implementation of IngestionDetails interface method
+     * 
+     * @param file - The uploaded file to validate
+     * @return true if file is valid, false otherwise
+     */
+    @Override
+    public boolean isValidJsonFile(MultipartFile file) {
+        // Check if file is null or empty
+        if (file == null || file.isEmpty()) {
+            System.out.println("❌ File validation failed: File is null or empty");
+            return false;
+        }
+        
+        // Check file name
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || !fileName.toLowerCase().endsWith(".json")) {
+            System.out.println("❌ File validation failed: Not a JSON file - " + fileName);
+            return false;
+        }
+        
+        // Check file size (max 10MB)
+        long maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.getSize() > maxSize) {
+            System.out.println("❌ File validation failed: File too large - " + file.getSize() + " bytes");
+            return false;
+        }
+        
+        // Try to parse as JSON (basic validation)
+        try {
+            String content = new String(file.getBytes());
+            objectMapper.readTree(content); // This will throw exception if invalid JSON
+            System.out.println("✅ File validation passed: " + fileName);
+            return true;
+        } catch (Exception e) {
+            System.out.println("❌ File validation failed: Invalid JSON format - " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Gets information about supported file formats
+     * Implementation of IngestionDetails interface method
+     * 
+     * @return String describing supported JSON formats
+     */
+    @Override
+    public String getSupportedFormatsInfo() {
+        return """
+            📋 Supported JSON Formats:
+            
+            1️⃣ OpenAPI 3.0 Format:
+            {
+              "openapi": "3.0.0",
+              "paths": {
+                "/users": {
+                  "get": { "description": "Get users" },
+                  "post": { "description": "Create user" }
+                }
+              }
+            }
+            
+            2️⃣ Simple Array Format:
+            [
+              {
+                "path": "/api/users",
+                "method": "GET",
+                "description": "Get all users",
+                "requestBody": "...",
+                "responseBody": "..."
+              }
+            ]
+            
+            3️⃣ Single API Object Format:
+            {
+              "path": "/api/users",
+              "method": "POST",
+              "description": "Create new user",
+              "requestBody": "JSON schema",
+              "responseBody": "JSON response"
+            }
+            
+            📏 File Requirements:
+            - Must be .json file
+            - Maximum size: 10MB
+            - Valid JSON syntax
+            """;
     }
 }
