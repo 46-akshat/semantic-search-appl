@@ -43,10 +43,10 @@ public class IngestionController {
         if (!ingestionService.isValidJsonFile(file)) {
             return ResponseEntity.badRequest().body("❌ Error: Invalid file. Please upload a valid JSON file.");
         }
-        
+        String fileName = file.getOriginalFilename();
         try {
             // Step 2: Process the file using our service interface
-            String fileName = file.getOriginalFilename();
+
             System.out.println("🚀 Starting to process file: " + fileName);
             List<ApiDetails> savedApis = ingestionService.processJsonFile(file);
             
